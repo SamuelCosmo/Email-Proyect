@@ -1,8 +1,10 @@
-import React, {useContext, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
   Dimensions,
   Modal,
   Pressable,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -10,12 +12,17 @@ import {
 import {EmailProps} from '../shared/interfaces';
 import LoopSvg from '../assets/loop';
 import {GlobalContext} from '../../store/StoreContext';
+import {useIsFocused} from '@react-navigation/native';
+import {getMessage} from '../config/services';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function EmailPage({navigation}: any) {
   //--- STORE ---///
-  const {emailList} = useContext(GlobalContext);
+  const {user, emailList, setEmailList} = useContext(GlobalContext);
 
   //--- STATES ---///
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [emailModal, setEmailModal] = useState<EmailProps>({
     _id: '',
@@ -24,6 +31,28 @@ export default function EmailPage({navigation}: any) {
     full_name: '',
     message: '',
   });
+  const isFocused = useIsFocused();
+
+  const requestEmailList = async () => {
+    if (user.id !== '' && user.token !== '') {
+      setLoading(true);
+      const resp = await getMessage(user.id, user.token);
+      setEmailList(resp);
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await requestEmailList();
+    setRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isFocused) {
+      requestEmailList();
+    }
+  }, [isFocused]);
 
   const renderItem = ({item, index}: any) => {
     const primary = index % 2 === 0;
@@ -85,24 +114,29 @@ export default function EmailPage({navigation}: any) {
   };
 
   return (
-    <View>
-      {modalRender()}
-      <View style={styles.table}>
-        <View style={[styles.row, styles.header]}>
-          <Text style={[styles.cell, styles.cell_header]}>From</Text>
-          <Text style={[styles.cell, styles.cell_header]}>Received</Text>
-          <Text style={styles.cell_actions}></Text>
+    <SafeAreaProvider>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        {modalRender()}
+        <View style={styles.table}>
+          <View style={[styles.row, styles.header]}>
+            <Text style={[styles.cell, styles.cell_header]}>From</Text>
+            <Text style={[styles.cell, styles.cell_header]}>Received</Text>
+            <Text style={styles.cell_actions}></Text>
+          </View>
+          {/* Data Rows */}
+          {emailList.length > 0 && !loading ? (
+            emailList.map((item, index) => renderItem({item, index}))
+          ) : (
+            <Text style={{textAlign: 'center', marginTop: 20}}>
+              No emails available
+            </Text>
+          )}
         </View>
-        {/* Data Rows */}
-        {emailList.length > 0 ? (
-          emailList.map((item, index) => renderItem({item, index}))
-        ) : (
-          <Text style={{textAlign: 'center', marginTop: 20}}>
-            No emails available
-          </Text>
-        )}
-      </View>
-    </View>
+      </ScrollView>
+    </SafeAreaProvider>
   );
 }
 
