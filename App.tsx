@@ -1,42 +1,41 @@
 import React, {useContext} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createDrawerNavigator, DrawerItemList} from '@react-navigation/drawer';
 import LoginPage from './src/login/login';
 import DashboardPage from './src/dashboard/dashboard';
 import EmailPage from './src/email/email';
 import {GlobalContext, GlobalProvider} from './store/StoreContext';
 
-const Tab = createBottomTabNavigator();
+// const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 
 export default function App(): React.JSX.Element {
   return (
     <GlobalProvider>
       <NavigationContainer>
-        <Tab.Navigator
+        <Drawer.Navigator
           initialRouteName="Login"
           screenOptions={{headerShown: false}}>
-          <Tab.Screen
+          <Drawer.Screen
             name="Login"
             component={LoginPage}
             options={{
               title: 'Login',
               headerShown: false,
-              tabBarStyle: {display: 'none'},
+              drawerStyle: {display: 'none'},
             }}
           />
-          <Tab.Screen
+          <Drawer.Screen
             name="Home"
             component={SecondNavigation}
             options={{
               title: 'Home',
               headerShown: false,
-              tabBarStyle: {display: 'none'},
+              drawerStyle: {display: 'none'},
             }}
           />
-        </Tab.Navigator>
+        </Drawer.Navigator>
       </NavigationContainer>
     </GlobalProvider>
   );
